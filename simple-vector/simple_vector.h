@@ -47,10 +47,9 @@ public:
     // Создаёт вектор из size элементов, инициализированных значением value
     SimpleVector(size_t size, const Type& value) {
         ArrayPtr<Type> tmp(size);
+        std::fill(tmp.Get(), tmp.Get() + size, value);
 		items_.swap(tmp);
-		size_ = size;
-		capacity_ = size;
-		std::fill(begin(), end(), value);
+		size_ = capacity_ = size;
     }
     
     // Конструктор копирования
@@ -73,11 +72,10 @@ public:
     
     // Конструктор перемещения
     SimpleVector(SimpleVector&& other) noexcept 
-        : items_(other.items_.Get())
     {
+        items_ = std::move(other.items_);
         size_ = std::exchange(other.size_, 0u);
         capacity_ = std::exchange(other.capacity_, 0u);
-        other.items_ = nullptr;
     }
 /* -------------------------------------------------------------------------Конструкторы */
 /* Операторы---------------------------------------------------------------------------- */
@@ -92,21 +90,21 @@ public:
 
     // Возвращает ссылку на элемент с индексом index
     Type& operator[](size_t index) noexcept {
+        assert(index < size_);
         return items_[index];
     }
 
     // Возвращает константную ссылку на элемент с индексом index
     const Type& operator[](size_t index) const noexcept {
+        assert(index < size_);
         return items_[index];
     }
     
     // Перемещающий оператор присваивания
     SimpleVector& operator=(SimpleVector&& rhs) noexcept {
-        items_.~ArrayPtr();
-        items_ = rhs.items_;
+        items_ = std::move(rhs.items_);
         size_ = std::exchange(rhs.size_, 0u);
         capacity_ = std::exchange(rhs.capacity_, 0u);
-        rhs.items_ = nullptr;
         return *this;
     }
 /* ----------------------------------------------------------------------------Операторы */
@@ -152,6 +150,7 @@ public:
     
     // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
     void PopBack() noexcept {
+        assert(size_);
         size_ = (IsEmpty()) ? size_ : size_ - 1;
     }
     
@@ -160,6 +159,7 @@ public:
     // Если перед вставкой значения вектор был заполнен полностью,
     // вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
     Iterator Insert(ConstIterator pos, const Type& value) {
+        assert(pos >= begin() && pos <= end());
         if (size_ < capacity_) {
             std::copy_backward(const_cast<Iterator>(pos), end(), end() + 1);
             items_[pos - items_.Get()] = value;
@@ -181,6 +181,7 @@ public:
     }
     
     Iterator Insert(ConstIterator pos, Type&& value) {
+        assert(pos >= begin() && pos <= end());
         if (size_ < capacity_) {
             std::move_backward(const_cast<Iterator>(pos), end(), end() + 1);
             items_[pos - items_.Get()] = std::move(value);
@@ -203,6 +204,7 @@ public:
     
     // Удаляет элемент вектора в указанной позиции
     Iterator Erase(ConstIterator pos) {
+        assert(pos >= begin() && pos < end());
         std::move(const_cast<Iterator>(pos + 1), end(), const_cast<Iterator>(pos));
         --size_;
         return const_cast<Iterator>(pos);
@@ -317,7 +319,7 @@ private:
 
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
-	return !(lhs < rhs) && !(rhs < lhs);
+	return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 template <typename Type>
