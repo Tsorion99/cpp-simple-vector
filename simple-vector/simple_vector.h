@@ -63,10 +63,12 @@ public:
     }
 
     // Создаёт вектор из std::initializer_list
-    SimpleVector(std::initializer_list<Type> init) {
-        SimpleVector<Type> tmp(init.size());
-		std::copy(init.begin(), init.end(), tmp.begin());
-		swap(tmp);
+    SimpleVector(std::initializer_list<Type> init)
+    : items_(init.size()),
+      size_(init.size()),
+      capacity_(init.size())
+    {
+		std::copy(init.begin(), init.end(), begin());
     }
     
     SimpleVector(const ReserveProxyObj reserve) {
