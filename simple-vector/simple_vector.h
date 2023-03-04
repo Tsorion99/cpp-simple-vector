@@ -45,18 +45,21 @@ public:
     }
 
     // Создаёт вектор из size элементов, инициализированных значением value
-    SimpleVector(size_t size, const Type& value) {
-        ArrayPtr<Type> tmp(size);
-        std::fill(tmp.Get(), tmp.Get() + size, value);
-		items_.swap(tmp);
-		size_ = capacity_ = size;
+    SimpleVector(size_t size, const Type& value)
+    : items_(size),
+      size_(size),
+      capacity_(size)
+    {
+        std::fill(begin(), end(), value);
     }
     
     // Конструктор копирования
-    SimpleVector(const SimpleVector& other) {
-        SimpleVector<Type> tmp(other.size_);
-        std::copy(other.begin(), other.end(), tmp.begin());
-        swap(tmp);
+    SimpleVector(const SimpleVector& other)
+    : items_(other.size_),
+      size_(other.size_),
+      capacity_(other.size_)
+    {
+        std::copy(other.begin(), other.end(), begin());
     }
 
     // Создаёт вектор из std::initializer_list
@@ -150,8 +153,8 @@ public:
     
     // "Удаляет" последний элемент вектора. Вектор не должен быть пустым
     void PopBack() noexcept {
-        assert(size_);
-        size_ = (IsEmpty()) ? size_ : size_ - 1;
+        assert(!IsEmpty());
+        --size_;
     }
     
     // Вставляет значение value в позицию pos.
@@ -319,6 +322,9 @@ private:
 
 template <typename Type>
 inline bool operator==(const SimpleVector<Type>& lhs, const SimpleVector<Type>& rhs) {
+    if (lhs.GetSize() != rhs.GetSize()) {
+        return false;
+    }
 	return std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
