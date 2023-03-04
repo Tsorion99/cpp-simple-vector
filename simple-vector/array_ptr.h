@@ -21,6 +21,10 @@ public:
     explicit ArrayPtr(Type* raw_ptr) noexcept {
         raw_ptr_ = raw_ptr;
     }
+    
+    ArrayPtr(ArrayPtr&& other) {
+        raw_ptr_ = std::exchange(other.raw_ptr_, nullptr);
+    }
 
     // Запрещаем копирование
     ArrayPtr(const ArrayPtr&) = delete;
@@ -28,14 +32,13 @@ public:
     ~ArrayPtr() {
         delete[] raw_ptr_;
     }
-
-    ArrayPtr& operator=(const ArrayPtr& rhs) noexcept {
-        raw_ptr_ = rhs.raw_ptr_;
-        return *this;
-    }
     
-    ArrayPtr& operator=(Type* rhs) noexcept {
-        raw_ptr_ = rhs;
+    // Запрещаем присваивание
+    ArrayPtr& operator=(const ArrayPtr& rhs) = delete;
+
+    // Перемещающий оператор присваивания
+    ArrayPtr& operator=(ArrayPtr&& rhs) noexcept {
+        raw_ptr_ = std::exchange(rhs.raw_ptr_, nullptr);
         return *this;
     }
 
